@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Falcons Badminton — Peg Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0f1117;--surface:#181c27;--surface2:#1f2436;--border:#2a3050;
+    --accent:#f0c040;--accent2:#e05a2b;--lady:#3a6ef0;--man:#c8a96e;
+    --text:#e8eaf0;--muted:#6b7490;--court-bg:#0e2a1a;--court-line:#1a5c30;--guest:#7c5cbf;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+  #password-gate{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
+  #password-gate::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(255,255,255,.015) 40px,rgba(255,255,255,.015) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(255,255,255,.015) 40px,rgba(255,255,255,.015) 41px);pointer-events:none}
+  .gate-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px 36px;width:100%;max-width:380px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.6);position:relative;z-index:1}
+  .gate-icon{font-size:48px;margin-bottom:16px}
+  .gate-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;color:var(--accent);margin-bottom:4px}
+  .gate-subtitle{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:28px}
+  .gate-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);border-radius:8px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:15px;text-align:center;letter-spacing:2px;transition:border-color .2s;margin-bottom:14px}
+  .gate-input:focus{outline:none;border-color:var(--accent)}
+  .gate-btn{width:100%;padding:12px;background:var(--accent);color:#111;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:1px}
+  .gate-btn:hover{background:#ffd060;transform:translateY(-1px)}
+  .gate-error{color:var(--accent2);font-size:12px;margin-top:10px;min-height:18px}
+  #app-content{display:none}
+  body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(255,255,255,.015) 40px,rgba(255,255,255,.015) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(255,255,255,.015) 40px,rgba(255,255,255,.015) 41px);pointer-events:none;z-index:0}
+  header{background:var(--surface);border-bottom:2px solid var(--accent);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 4px 30px rgba(0,0,0,.5)}
+  .logo{display:flex;align-items:center;gap:12px}
+  .logo-icon{width:38px;height:38px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px}
+  h1{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--accent)}
+  .subtitle{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:-2px}
+  .header-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .btn{padding:7px 16px;border-radius:6px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .15s}
+  .btn-primary{background:var(--accent);color:#111}
+  .btn-primary:hover{background:#ffd060;transform:translateY(-1px)}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-danger{background:var(--accent2);color:#fff;border:none}
+  .btn-danger:hover{background:#f06a3b}
+  .btn-sm{padding:4px 10px;font-size:12px}
+  main{position:relative;z-index:1;padding:20px 24px;max-width:1400px;margin:0 auto}
+
+  /* TABS */
+  .tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--border)}
+  .tab-btn{padding:8px 20px;border:none;background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s}
+  .tab-btn:hover{color:var(--text)}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .tab-panel{display:none}
+  .tab-panel.active{display:block}
+
+  /* LEGEND */
+  .legend{display:flex;gap:16px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px;margin-bottom:20px;font-size:12px;color:var(--muted)}
+  .legend-item{display:flex;align-items:center;gap:6px}
+  .legend-peg{width:28px;height:14px;border-radius:7px}
+
+  /* BOARD */
+  .board{display:grid;grid-template-columns:1fr 280px;gap:20px}
+
+  /* ROSTER */
+  .roster-bar{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:20px;overflow:hidden}
+  .roster-bar-header{background:var(--surface2);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .roster-bar-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--text)}
+  .roster-bar-sub{font-size:11px;color:var(--muted);margin-top:1px}
+  .roster-counts{display:flex;gap:8px;align-items:center}
+  .roster-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+  .badge-inactive{background:rgba(107,116,144,.2);color:var(--muted);border:1px solid var(--border)}
+  .badge-active{background:rgba(240,192,64,.15);color:var(--accent);border:1px solid rgba(240,192,64,.3)}
+  .roster-search{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-family:'DM Sans',sans-serif;font-size:13px;width:180px}
+  .roster-search:focus{outline:none;border-color:var(--accent)}
+  .roster-grid{padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px}
+  .roster-player{display:flex;align-items:center;border-radius:22px;overflow:hidden;border:1.5px solid var(--border);font-size:12px;font-weight:500;transition:all .15s;opacity:.5}
+  .roster-player.active{opacity:1;border-color:var(--man)}
+  .roster-player.guest-active{opacity:1;border-color:var(--guest)}
+  .roster-player .r-name{padding:5px 10px;color:var(--muted);background:var(--surface2);white-space:nowrap}
+  .roster-player.active .r-name{color:var(--man);background:rgba(200,169,110,.1)}
+  .roster-player.guest-active .r-name{color:#b090ff;background:rgba(124,92,191,.1)}
+  .roster-player .r-btn{padding:5px 8px;background:var(--surface2);border:none;cursor:pointer;font-size:11px;color:var(--muted);transition:background .1s;white-space:nowrap;border-left:1px solid var(--border)}
+  .roster-player .r-btn:hover{background:var(--surface);color:var(--accent)}
+  .roster-player.hidden-filter{display:none}
+
+  /* COURTS */
+  .courts-section h2,.waiting-section h2{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--accent);margin-bottom:12px}
+  .courts-grid{display:flex;flex-direction:column;gap:14px}
+  .court-card{background:var(--court-bg);border:1px solid var(--court-line);border-radius:10px;overflow:hidden;transition:box-shadow .2s}
+  .court-card:hover{box-shadow:0 0 20px rgba(26,92,48,.4)}
+  .court-header{background:var(--court-line);padding:8px 16px;display:flex;align-items:center;justify-content:space-between}
+  .court-name{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:#b0ffcc}
+  .court-body{padding:14px 16px}
+  .court-net{display:grid;grid-template-columns:1fr 24px 1fr;gap:0;align-items:stretch;min-height:70px}
+  .court-side{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px;background:rgba(255,255,255,.03);border-radius:6px}
+  .court-net-line{display:flex;align-items:center;justify-content:center;color:var(--court-line);font-size:10px;letter-spacing:1px;writing-mode:vertical-rl}
+  .court-net-line::after{content:'━━ NET ━━'}
+  .court-empty{color:var(--muted);font-size:12px;font-style:italic;align-self:center}
+  .court-actions{margin-top:10px;display:flex;gap:8px;justify-content:flex-end}
+
+  /* PEGS */
+  .peg{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;user-select:none;transition:all .15s;position:relative}
+  .peg-man{background:rgba(200,169,110,.15);border:1.5px solid var(--man);color:var(--man)}
+  .peg-lady{background:rgba(58,110,240,.15);border:1.5px solid var(--lady);color:#80a8ff}
+  .peg-guest{background:rgba(124,92,191,.15);border:1.5px solid var(--guest);color:#b090ff}
+  .peg-picks::before{content:'PICKS';position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:700;letter-spacing:1px;color:var(--accent);background:var(--bg);padding:0 4px;border-radius:3px}
+  .peg-late::after{content:'★';font-size:9px;color:var(--accent);margin-left:2px}
+  .peg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .peg-man .peg-dot{background:var(--man)}
+  .peg-lady .peg-dot{background:var(--lady)}
+  .peg-guest .peg-dot{background:var(--guest)}
+  .peg:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.3)}
+
+  /* QUEUE */
+  .waiting-section{display:flex;flex-direction:column;gap:14px}
+  .queue-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .queue-header{background:var(--surface2);padding:8px 14px;display:flex;align-items:center;justify-content:space-between}
+  .queue-title{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--text)}
+  .queue-count{background:var(--accent);color:#111;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px}
+  .queue-list{padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-height:50px}
+  .queue-item{display:flex;align-items:center;gap:8px}
+  .queue-pos{font-size:10px;color:var(--muted);width:18px;text-align:right;flex-shrink:0}
+  .queue-item .peg{flex:1}
+  .storage-list{padding:10px 12px;display:flex;flex-wrap:wrap;gap:6px;min-height:40px}
+
+  /* MODALS */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
+  .modal-overlay.open{opacity:1;pointer-events:all}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:440px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.5);transform:translateY(20px);transition:transform .2s}
+  .modal-overlay.open .modal{transform:translateY(0)}
+  .modal h3{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--accent);margin-bottom:18px}
+  .form-group{margin-bottom:14px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px}
+  input[type=text],select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;transition:border-color .15s}
+  input[type=text]:focus,select:focus{outline:none;border-color:var(--accent)}
+  .radio-group{display:flex;gap:10px}
+  .radio-opt{flex:1;padding:8px;border-radius:7px;border:1.5px solid var(--border);text-align:center;cursor:pointer;font-size:13px;transition:all .15s}
+  .radio-opt.active-man{border-color:var(--man);background:rgba(200,169,110,.1);color:var(--man)}
+  .radio-opt.active-lady{border-color:var(--lady);background:rgba(58,110,240,.1);color:#80a8ff}
+  .radio-opt.active-guest{border-color:var(--guest);background:rgba(124,92,191,.1);color:#b090ff}
+  .modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+
+  /* PLAYERS TABLE */
+  .players-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .players-table-header{background:var(--surface2);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .players-table-header h2{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--accent)}
+  .players-search{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 12px;font-family:'DM Sans',sans-serif;font-size:13px;width:220px}
+  .players-search:focus{outline:none;border-color:var(--accent)}
+  table{width:100%;border-collapse:collapse}
+  thead th{background:var(--surface2);padding:10px 16px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border)}
+  tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+  tbody tr:last-child{border-bottom:none}
+  tbody tr:hover{background:rgba(255,255,255,.02)}
+  tbody td{padding:10px 16px;font-size:13px;vertical-align:middle}
+  .type-toggle{display:flex;gap:6px;flex-wrap:wrap}
+  .type-btn{padding:4px 10px;border-radius:14px;border:1.5px solid var(--border);background:none;color:var(--muted);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .12s;white-space:nowrap}
+  .type-btn:hover{border-color:var(--accent);color:var(--text)}
+  .type-btn.active-man{border-color:var(--man);background:rgba(200,169,110,.12);color:var(--man);font-weight:600}
+  .type-btn.active-lady{border-color:var(--lady);background:rgba(58,110,240,.12);color:#80a8ff;font-weight:600}
+  .type-btn.active-guest{border-color:var(--guest);background:rgba(124,92,191,.12);color:#b090ff;font-weight:600}
+  .edit-name-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-family:'DM Sans',sans-serif;font-size:13px;width:100%;max-width:220px}
+  .edit-name-input:focus{outline:none;border-color:var(--accent)}
+  .status-pill{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap}
+  .sp-inactive{background:rgba(107,116,144,.15);color:var(--muted)}
+  .sp-waiting{background:rgba(240,192,64,.12);color:var(--accent)}
+  .sp-playing{background:rgba(90,220,122,.12);color:#5adc7a}
+  .sp-break{background:rgba(224,90,43,.12);color:var(--accent2)}
+  .hidden-row{display:none}
+
+  /* MANUAL PICK */
+  .pick-modal{max-width:500px}
+  .pick-player-list{display:flex;flex-direction:column;gap:6px;margin:4px 0 8px}
+  .pick-player-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);cursor:pointer;transition:all .15s}
+  .pick-player-row:hover{border-color:var(--accent)}
+  .pick-player-row.selected{border-color:var(--accent);background:rgba(240,192,64,.08)}
+  .pick-sel-badge{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;transition:all .15s}
+  .pick-player-row.selected .pick-sel-badge{background:var(--accent);border-color:var(--accent);color:#111}
+  .pick-info{font-size:12px;color:var(--muted);margin-bottom:10px}
+  .pick-info span{color:var(--accent);font-weight:600}
+
+  /* WINNER */
+  .winner-modal{max-width:480px}
+  .winner-pairs{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+  .winner-pair-btn{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);cursor:pointer;transition:all .15s;gap:10px}
+  .winner-pair-btn:hover{border-color:var(--accent);background:rgba(240,192,64,.07)}
+  .winner-pair-btn.selected{border-color:#5adc7a;background:rgba(90,220,122,.08)}
+  .winner-pair-names{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+  .winner-trophy{font-size:20px;opacity:0;transition:opacity .15s}
+  .winner-pair-btn.selected .winner-trophy{opacity:1}
+  .winner-or{text-align:center;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:1px}
+
+  /* MISC */
+  .rules-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:12px;color:var(--muted);line-height:1.6}
+  .rules-panel summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:13px;letter-spacing:1px;text-transform:uppercase}
+  .rules-panel ul{margin-top:10px;padding-left:16px}
+  .rules-panel li{margin-bottom:4px}
+  .empty{color:var(--muted);font-size:12px;font-style:italic;padding:8px 0}
+  .toast-container{position:fixed;bottom:24px;right:24px;z-index:300;display:flex;flex-direction:column;gap:8px}
+  .toast{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);padding:10px 16px;border-radius:8px;font-size:13px;color:var(--text);animation:slideIn .3s ease;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+  .toast.warn{border-left-color:var(--accent2)}
+  @keyframes slideIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+  .ctx-menu{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px;z-index:250;box-shadow:0 8px 30px rgba(0,0,0,.5);min-width:170px}
+  .ctx-item{padding:7px 12px;border-radius:5px;font-size:13px;cursor:pointer;color:var(--text);transition:background .1s}
+  .ctx-item:hover{background:var(--surface2)}
+  .ctx-item.danger{color:var(--accent2)}
+  .ctx-divider{border:none;border-top:1px solid var(--border);margin:4px 0}
+  @media(max-width:900px){.board{grid-template-columns:1fr}}
+  @media(max-width:600px){main{padding:12px}h1{font-size:22px}}
+</style>
+</head>
+<body>
+
+<!-- PASSWORD GATE -->
+<div id="password-gate">
+  <div class="gate-box">
+    <div class="gate-icon">🏸</div>
+    <div class="gate-title">Falcons Peg Board</div>
+    <div class="gate-subtitle">Falcons Badminton Club</div>
+    <input class="gate-input" type="password" id="gate-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPassword()" />
+    <button class="gate-btn" onclick="checkPassword()">Enter</button>
+    <div class="gate-error" id="gate-error"></div>
+  </div>
+</div>
+
+<!-- APP (hidden until authenticated) -->
+<div id="app-content">
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🏸</div>
+    <div>
+      <h1>Falcons Peg Board</h1>
+      <div class="subtitle">Falcons Badminton Club</div>
+    </div>
+  </div>
+  <div class="header-controls">
+    <button class="btn btn-secondary" onclick="openAddModal()">+ Add Player</button>
+    <button class="btn btn-secondary" onclick="openManualPickModal()">✋ Manual Pick</button>
+    <button class="btn btn-primary" onclick="pickNextGame()">▶ Auto Pick</button>
+    <span id="live-clock" style="color:var(--accent);font-size:13px;padding:0 4px"></span>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('board')">🏟 Board</button>
+    <button class="tab-btn" onclick="switchTab('players')">👥 Players</button>
+  </div>
+
+  <!-- BOARD TAB -->
+  <div class="tab-panel active" id="tab-board">
+    <details class="rules-panel">
+      <summary>📋 Rules (click to expand)</summary>
+      <ul>
+        <li><strong>Principle:</strong> Equal playing time, varied partners, fluent mix of sexes and skill levels.</li>
+        <li><strong>Peg colours:</strong> Ladies = Blue, Men = Tan, Guests = Purple.</li>
+        <li><strong>Picking:</strong> First non-guest in queue picks. Guests cannot pick.</li>
+        <li><strong>Ladies priority:</strong> If a lady is in top 5, she may pick first for ladies 4 or mixed.</li>
+        <li><strong>After game:</strong> Winners return to queue first, losers follow.</li>
+        <li><strong>Break:</strong> Remove peg to storage; return it to back of queue when ready.</li>
+      </ul>
+    </details>
+
+    <div class="legend">
+      <strong style="font-size:11px;text-transform:uppercase;letter-spacing:1px">Legend:</strong>
+      <div class="legend-item"><div class="legend-peg" style="background:rgba(200,169,110,.3);border:1.5px solid #c8a96e"></div>Men</div>
+      <div class="legend-item"><div class="legend-peg" style="background:rgba(58,110,240,.3);border:1.5px solid #3a6ef0"></div>Ladies</div>
+      <div class="legend-item"><div class="legend-peg" style="background:rgba(124,92,191,.3);border:1.5px solid #7c5cbf"></div>Guest</div>
+      <div class="legend-item"><span style="color:var(--accent)">★</span> Late arrival</div>
+      <div class="legend-item"><span style="color:var(--accent);font-size:11px;border:1px dashed var(--accent);padding:1px 5px;border-radius:4px">PICKS</span> Next to pick</div>
+    </div>
+
+    <div class="roster-bar">
+      <div class="roster-bar-header">
+        <div>
+          <div class="roster-bar-title">🗂 Session Roster</div>
+          <div class="roster-bar-sub">Check players in to queue or break for tonight's session</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div class="roster-counts">
+            <span class="roster-badge badge-inactive" id="roster-inactive-count">0 not in</span>
+            <span class="roster-badge badge-active" id="roster-active-count">0 in session</span>
+          </div>
+          <input class="roster-search" type="text" placeholder="🔍 Search…" oninput="filterRoster(this.value)" />
+        </div>
+      </div>
+      <div class="roster-grid" id="roster-grid"></div>
+    </div>
+
+    <div class="board">
+      <div>
+        <h2>🏟 Courts</h2>
+        <div class="courts-grid" id="courts-grid"></div>
+      </div>
+      <div class="waiting-section">
+        <h2>📋 Queue</h2>
+        <div class="queue-card">
+          <div class="queue-header">
+            <span class="queue-title">Waiting to Play</span>
+            <span class="queue-count" id="waiting-count">0</span>
+          </div>
+          <div class="queue-list" id="waiting-list"></div>
+        </div>
+        <div class="queue-card">
+          <div class="queue-header">
+            <span class="queue-title">Next to Play</span>
+            <span class="queue-count" id="next-count">0</span>
+          </div>
+          <div class="queue-list" id="next-list"></div>
+        </div>
+        <div class="queue-card">
+          <div class="queue-header"><span class="queue-title">On Break</span></div>
+          <div class="storage-list" id="storage-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAYERS TAB -->
+  <div class="tab-panel" id="tab-players">
+    <div class="players-table-wrap">
+      <div class="players-table-header">
+        <h2>👥 All Players</h2>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input class="players-search" type="text" placeholder="🔍 Search player…" oninput="filterPlayersTable(this.value)" />
+          <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Add Player</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Status</th><th>Delete</th></tr></thead>
+        <tbody id="players-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- Manual Pick Modal -->
+<div class="modal-overlay" id="manual-pick-modal">
+  <div class="modal pick-modal">
+    <h3>✋ Manual Pick</h3>
+    <p class="pick-info">Select exactly <span>4 players</span> from the top 6. <span id="pick-selected-count">0/4</span> selected.</p>
+    <div class="pick-player-list" id="pick-player-list"></div>
+    <div class="form-group" style="margin-top:14px">
+      <label>Assign to Court</label>
+      <select id="pick-court-select"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('manual-pick-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmManualPick()">Start Game ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- Winner Modal -->
+<div class="modal-overlay" id="winner-modal">
+  <div class="modal winner-modal">
+    <h3>🏆 Who Won?</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Select the winning pair — they go back to the queue first.</p>
+    <div class="winner-pairs" id="winner-pairs"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('winner-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmWinner()">Confirm &amp; Finish</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Player Modal -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <h3>Add Player</h3>
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" id="player-name" placeholder="Player name" />
+    </div>
+    <div class="form-group">
+      <label>Type</label>
+      <div class="radio-group">
+        <div class="radio-opt active-man" id="opt-man" onclick="selectType('man')">👤 Man</div>
+        <div class="radio-opt" id="opt-lady" onclick="selectType('lady')">👤 Lady</div>
+        <div class="radio-opt" id="opt-guest" onclick="selectType('guest')">🎫 Guest</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Arrival</label>
+      <div class="radio-group">
+        <div class="radio-opt active-man" id="opt-ontime" onclick="selectArrival('ontime')">⏰ On time</div>
+        <div class="radio-opt" id="opt-late" onclick="selectArrival('late')">🌙 Late</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAddPlayer()">Add to Queue</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:360px">
+    <h3>Delete Player?</h3>
+    <p id="delete-modal-msg" style="font-size:14px;color:var(--muted);margin-bottom:6px"></p>
+    <p style="font-size:12px;color:var(--accent2)">This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('delete-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDeletePlayer()">Delete</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- end #app-content -->
+
+<div class="toast-container" id="toasts"></div>
+<div class="ctx-menu" id="ctx-menu" style="display:none"></div>
+
+<script>
+// ── PASSWORD GATE ──
+var PASSWORD_HASH = '4ab03aea70951005e5a922f27048711c6e5172c433deaad105f09ffbd326d9ef';
+
+function checkPassword() {
+  var val = document.getElementById('gate-input').value;
+  var err = document.getElementById('gate-error');
+  if (!val) return;
+  // Hash the input using SHA-256 and compare
+  var encoded = new TextEncoder().encode(val);
+  crypto.subtle.digest('SHA-256', encoded).then(function(hashBuffer) {
+    var hashArray = Array.from(new Uint8Array(hashBuffer));
+    var hashHex = hashArray.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+    if (hashHex === PASSWORD_HASH) {
+      sessionStorage.setItem('falcons_auth', '1');
+      document.getElementById('password-gate').style.display = 'none';
+      document.getElementById('app-content').style.display = 'block';
+      init();
+    } else {
+      err.textContent = 'Incorrect password. Please try again.';
+      document.getElementById('gate-input').value = '';
+      document.getElementById('gate-input').focus();
+      setTimeout(function(){ err.textContent=''; }, 3000);
+    }
+  });
+}
+
+// Auto-unlock if already authenticated this session
+if (sessionStorage.getItem('falcons_auth') === '1') {
+  document.getElementById('password-gate').style.display = 'none';
+  document.getElementById('app-content').style.display = 'block';
+}
+
+var players = [];
+var courts  = [];
+var nextId  = 1;
+var lastSnapshot = null;
+var deleteTargetId = null;
+
+function init() {
+  courts = [
+    {id:1,name:'Court 1',sides:[[],[]]},
+    {id:2,name:'Court 2',sides:[[],[]]},
+    {id:3,name:'Court 3',sides:[[],[]]},
+    {id:4,name:'Court 4',sides:[[],[]]},
+  ];
+  var names = [
+    'Suresh BHUPATHIRAJU','SriHarsha CHERUKURI','Prasant CHINTAMANENI','Saketh CHODIMELLA',
+    'Venkat DANDU','Pavan DRONAMRAJU','Ramesh GADDAM','Hari GOPI',
+    'Jay JEGANATHAN','Karun KARUN','Hari KOLLURU','Jayanth KOMARAGIRI',
+    'Saif MOHAMMAD','Siva Prasad NADENDLA','Ramu NADIMPALLI','Venky PAPPULA',
+    'Ravindra POTHURI','Subhas RAO','Praveen SABBA','Ravindra SHET',
+    'Syam Prasad SRIKAKULAM','Sai Sriharsha TIRUMAREDDI','Vaibhav TIWARI','Vivek V',
+    'Akhil VANKA','Prasad VEGASNA','Ravi Valluri','Manju',
+    'Praveen','Murali','Amin','Ram Manohar'
+  ];
+  names.forEach(function(n) {
+    players.push({id:nextId++,name:n,type:'man',state:'inactive',courtId:null,side:null,late:false});
+  });
+  render();
+}
+
+function waitingPlayers()  { return players.filter(function(p){return p.state==='waiting';}); }
+function storagePlayers()  { return players.filter(function(p){return p.state==='storage';}); }
+function inactivePlayers() { return players.filter(function(p){return p.state==='inactive';}); }
+function activePlayers()   { return players.filter(function(p){return p.state!=='inactive';}); }
+function playerById(id)    { return players.find(function(p){return p.id===id;}); }
+
+function pegClass(p) {
+  var c = 'peg';
+  if (p.type==='man') c+=' peg-man';
+  else if (p.type==='lady') c+=' peg-lady';
+  else c+=' peg-guest';
+  if (p.late) c+=' peg-late';
+  return c;
+}
+
+function pegHTML(p, isPicks) {
+  var pc = isPicks ? ' peg-picks' : '';
+  return '<span class="'+pegClass(p)+pc+'" onclick="pegClick(event,'+p.id+')"><span class="peg-dot"></span><span class="peg-name">'+p.name+'</span></span>';
+}
+
+function statusPill(state) {
+  if (state==='inactive') return '<span class="status-pill sp-inactive">Not in session</span>';
+  if (state==='waiting')  return '<span class="status-pill sp-waiting">Waiting</span>';
+  if (state==='playing')  return '<span class="status-pill sp-playing">Playing</span>';
+  if (state==='storage')  return '<span class="status-pill sp-break">On Break</span>';
+  return '';
+}
+
+// ── TABS ──
+function switchTab(name) {
+  var tabs = ['board','players'];
+  var btns = document.querySelectorAll('.tab-btn');
+  btns.forEach(function(b,i){ b.classList.toggle('active', tabs[i]===name); });
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name==='players') renderPlayersTable();
+}
+
+// ── RENDER ──
+function render() {
+  renderRoster();
+  renderCourts();
+  renderQueues();
+  updateClock();
+  if (document.getElementById('tab-players').classList.contains('active')) renderPlayersTable();
+}
+
+function renderRoster() {
+  document.getElementById('roster-inactive-count').textContent = inactivePlayers().length+' not in';
+  document.getElementById('roster-active-count').textContent   = activePlayers().length+' in session';
+  var html = '';
+  players.forEach(function(p) {
+    var isActive = p.state !== 'inactive';
+    var isGuest  = p.type === 'guest';
+    var label    = p.state==='waiting' ? ' ⏳' : p.state==='storage' ? ' ☕' : p.state==='playing' ? ' 🏸' : '';
+    var cls = 'roster-player'+(isActive ? (isGuest ? ' guest-active' : ' active') : '');
+    var btns = '';
+    if (!isActive) {
+      btns = '<span class="r-btn" onclick="rosterToQueue('+p.id+')">+ Queue</span><span class="r-btn" onclick="rosterToBreak('+p.id+')">☕ Break</span>';
+    } else if (p.state==='playing') {
+      btns = '<span class="r-btn" style="opacity:.5;cursor:default">🏸 Playing</span>';
+    } else if (p.state==='waiting') {
+      btns = '<span class="r-btn" onclick="rosterToBreak('+p.id+')">☕ Break</span><span class="r-btn" onclick="rosterRemove('+p.id+')">✕</span>';
+    } else {
+      btns = '<span class="r-btn" onclick="rosterToQueue('+p.id+')">↩ Queue</span><span class="r-btn" onclick="rosterRemove('+p.id+')">✕</span>';
+    }
+    html += '<div class="'+cls+'" data-name="'+p.name.toLowerCase()+'" id="roster-'+p.id+'"><span class="r-name">'+p.name+label+'</span>'+btns+'</div>';
+  });
+  document.getElementById('roster-grid').innerHTML = html;
+}
+
+function renderCourts() {
+  var html = '';
+  courts.forEach(function(court) {
+    var s0 = court.sides[0].map(function(id){return playerById(id);}).filter(Boolean);
+    var s1 = court.sides[1].map(function(id){return playerById(id);}).filter(Boolean);
+    var empty = !s0.length && !s1.length;
+    var status = empty
+      ? '<span style="color:var(--accent2)">● Free</span>'
+      : '<span style="color:#5adc7a">● In Play</span>';
+    var side0html = s0.length ? s0.map(function(p){return pegHTML(p,false);}).join('') : '<span class="court-empty">Empty</span>';
+    var side1html = s1.length ? s1.map(function(p){return pegHTML(p,false);}).join('') : '<span class="court-empty">Empty</span>';
+    var actions = '';
+    if (!empty) {
+      actions += '<button class="btn btn-sm btn-secondary" style="border-color:var(--accent2);color:var(--accent2)" onclick="undoLastPick()">↩ Undo Pick</button>';
+      actions += '<button class="btn btn-sm btn-secondary" onclick="gameFinished('+court.id+')">Game Finished ✓</button>';
+    } else {
+      actions += '<button class="btn btn-sm btn-secondary" onclick="moveNextToPlay('+court.id+')">Move Next → Court</button>';
+    }
+    html += '<div class="court-card"><div class="court-header"><span class="court-name">'+court.name+'</span>'+status+'</div><div class="court-body"><div class="court-net"><div class="court-side">'+side0html+'</div><div class="court-net-line"></div><div class="court-side">'+side1html+'</div></div><div class="court-actions">'+actions+'</div></div></div>';
+  });
+  document.getElementById('courts-grid').innerHTML = html;
+}
+
+function renderQueues() {
+  var waiting = waitingPlayers();
+  document.getElementById('waiting-count').textContent = waiting.length;
+  document.getElementById('next-count').textContent = Math.min(6,waiting.length);
+  var picksIdx = -1;
+  for (var i=0;i<waiting.length;i++) { if (waiting[i].type!=='guest'){picksIdx=i;break;} }
+
+  if (!waiting.length) {
+    document.getElementById('waiting-list').innerHTML = '<div class="empty">No players in queue</div>';
+    document.getElementById('next-list').innerHTML = '<div class="empty">—</div>';
+  } else {
+    var wHtml='', nHtml='';
+    waiting.forEach(function(p,i){
+      wHtml += '<div class="queue-item"><span class="queue-pos">'+(i+1)+'</span>'+pegHTML(p,i===picksIdx)+'</div>';
+    });
+    var top6 = waiting.slice(0,6);
+    top6.forEach(function(p,i){
+      nHtml += '<div class="queue-item"><span class="queue-pos">'+(i+1)+'</span>'+pegHTML(p,waiting.indexOf(p)===picksIdx)+'</div>';
+    });
+    document.getElementById('waiting-list').innerHTML = wHtml;
+    document.getElementById('next-list').innerHTML = nHtml;
+  }
+  var storage = storagePlayers();
+  document.getElementById('storage-list').innerHTML = storage.length
+    ? storage.map(function(p){return pegHTML(p,false);}).join('')
+    : '<div class="empty">None on break</div>';
+}
+
+function renderPlayersTable() {
+  var html = '';
+  players.forEach(function(p,i) {
+    var manActive   = p.type==='man'   ? 'active-man'   : '';
+    var ladyActive  = p.type==='lady'  ? 'active-lady'  : '';
+    var guestActive = p.type==='guest' ? 'active-guest' : '';
+    var deleteBtn   = p.state!=='playing'
+      ? '<button class="btn btn-sm btn-danger" onclick="openDeleteModal('+p.id+')">🗑 Delete</button>'
+      : '<span style="font-size:11px;color:var(--muted)">Playing</span>';
+    html += '<tr id="prow-'+p.id+'" data-name="'+p.name.toLowerCase()+'">'
+      +'<td style="color:var(--muted);font-size:12px">'+(i+1)+'</td>'
+      +'<td><input class="edit-name-input" value="'+p.name+'" onchange="updatePlayerName('+p.id+',this.value)" /></td>'
+      +'<td><div class="type-toggle">'
+        +'<button class="type-btn '+manActive+'"   onclick="setPlayerType('+p.id+',\'man\')">👤 Man</button>'
+        +'<button class="type-btn '+ladyActive+'"  onclick="setPlayerType('+p.id+',\'lady\')">👤 Lady</button>'
+        +'<button class="type-btn '+guestActive+'" onclick="setPlayerType('+p.id+',\'guest\')">🎫 Guest</button>'
+      +'</div></td>'
+      +'<td>'+statusPill(p.state)+'</td>'
+      +'<td>'+deleteBtn+'</td>'
+      +'</tr>';
+  });
+  document.getElementById('players-tbody').innerHTML = html;
+}
+
+// ── PLAYER TYPE (Players tab) ──
+function setPlayerType(id, newType) {
+  var p = playerById(id); if (!p) return;
+  p.type = newType;
+  var label = newType==='man' ? 'Member (Man)' : newType==='lady' ? 'Member (Lady)' : 'Guest';
+  toast(p.name+' set as '+label);
+  render();
+}
+
+function updatePlayerName(id, newName) {
+  newName = newName.trim(); if (!newName) return;
+  var p = playerById(id); if (!p || p.name===newName) return;
+  p.name = newName;
+  toast('Name updated');
+  render();
+}
+
+// ── DELETE ──
+function openDeleteModal(id) {
+  var p = playerById(id); if (!p) return;
+  deleteTargetId = id;
+  document.getElementById('delete-modal-msg').textContent = 'Delete "'+p.name+'"?';
+  document.getElementById('delete-modal').classList.add('open');
+}
+function confirmDeletePlayer() {
+  var p = playerById(deleteTargetId); if (!p) return;
+  var court = courts.find(function(c){return c.id===p.courtId;});
+  if (court) {
+    court.sides[0] = court.sides[0].filter(function(i){return i!==deleteTargetId;});
+    court.sides[1] = court.sides[1].filter(function(i){return i!==deleteTargetId;});
+  }
+  players = players.filter(function(pl){return pl.id!==deleteTargetId;});
+  closeModal('delete-modal');
+  toast(p.name+' deleted');
+  render();
+}
+
+function filterPlayersTable(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('#players-tbody tr').forEach(function(row){
+    row.classList.toggle('hidden-row', q.length>0 && !row.dataset.name.includes(q));
+  });
+}
+
+// ── ADD PLAYER MODAL ──
+var modalType = 'man', modalArrival = 'ontime';
+
+function openAddModal() {
+  modalType='man'; modalArrival='ontime';
+  updateTypeUI(); updateArrivalUI();
+  document.getElementById('player-name').value = '';
+  document.getElementById('add-modal').classList.add('open');
+  setTimeout(function(){ document.getElementById('player-name').focus(); }, 100);
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function selectType(t)    { modalType=t; updateTypeUI(); }
+function selectArrival(a) { modalArrival=a; updateArrivalUI(); }
+
+function updateTypeUI() {
+  ['man','lady','guest'].forEach(function(t){
+    document.getElementById('opt-'+t).className = 'radio-opt'+(modalType===t ? ' active-'+t : '');
+  });
+}
+function updateArrivalUI() {
+  document.getElementById('opt-ontime').className = 'radio-opt'+(modalArrival==='ontime' ? ' active-man' : '');
+  document.getElementById('opt-late').className   = 'radio-opt'+(modalArrival==='late'   ? ' active-man' : '');
+}
+
+function submitAddPlayer() {
+  var name = document.getElementById('player-name').value.trim();
+  if (!name) { toast('Please enter a name', true); return; }
+  players.push({id:nextId++,name:name,type:modalType,state:'waiting',courtId:null,side:null,late:modalArrival==='late'});
+  closeModal('add-modal');
+  toast(name+' added to queue');
+  render();
+}
+
+// ── ROSTER ACTIONS ──
+function rosterToQueue(id) { var p=playerById(id);if(!p)return;p.state='waiting';p.late=false;toast(p.name+' added to queue');render(); }
+function rosterToBreak(id) { var p=playerById(id);if(!p)return;p.state='storage';toast(p.name+' on break');render(); }
+function rosterRemove(id)  { var p=playerById(id);if(!p||p.state==='playing')return;p.state='inactive';toast(p.name+' removed from session');render(); }
+function filterRoster(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('.roster-player').forEach(function(el){
+    el.classList.toggle('hidden-filter', q.length>0 && !el.dataset.name.includes(q));
+  });
+}
+
+// ── PICK ──
+function pickNextGame() {
+  var waiting = waitingPlayers();
+  if (waiting.length < 4) { toast('Need at least 4 players in queue', true); return; }
+  var court = null;
+  for (var i=0;i<courts.length;i++) { if (!courts[i].sides[0].length && !courts[i].sides[1].length){ court=courts[i];break; } }
+  if (!court) { toast('No free courts', true); return; }
+  var top6 = waiting.slice(0,6);
+  var top10Ladies = waiting.slice(0,10).filter(function(p){return p.type==='lady';});
+  var chosen = top10Ladies.length>=2 ? autoSelectFour(top6) : top6.slice(0,4);
+  assignToCourt(court, chosen);
+  toast('Game started on '+court.name);
+  render();
+}
+
+function autoSelectFour(top6) {
+  var ladies = top6.filter(function(p){return p.type==='lady';});
+  var men    = top6.filter(function(p){return p.type!=='lady';});
+  if (ladies.length>=4) return ladies.slice(0,4);
+  if (ladies.length>=2 && men.length>=2) return [ladies[0],ladies[1],men[0],men[1]];
+  if (men.length>=4) return men.slice(0,4);
+  return top6.slice(0,4);
+}
+
+function saveSnapshot() {
+  lastSnapshot = {
+    players: players.map(function(p){return Object.assign({},p);}),
+    courts:  courts.map(function(c){return {id:c.id,name:c.name,sides:[[].concat(c.sides[0]),[].concat(c.sides[1])]};})
+  };
+}
+
+function assignToCourt(court, four) {
+  saveSnapshot();
+  four.forEach(function(p,i){
+    p.state='playing'; p.courtId=court.id; p.side=i<2?0:1; p.late=false;
+    court.sides[i<2?0:1].push(p.id);
+  });
+}
+
+function undoLastPick() {
+  if (!lastSnapshot) { toast('Nothing to undo', true); return; }
+  players = lastSnapshot.players;
+  courts  = lastSnapshot.courts;
+  lastSnapshot = null;
+  toast('↩ Pick undone');
+  render();
+}
+
+function moveNextToPlay(courtId) {
+  var waiting = waitingPlayers();
+  if (waiting.length<4) { toast('Need at least 4 in queue', true); return; }
+  var court = courts.find(function(c){return c.id===courtId;});
+  assignToCourt(court, autoSelectFour(waiting.slice(0,6)));
+  toast('Players moved to '+court.name);
+  render();
+}
+
+// ── WINNER ──
+var winnerCourtId = null, selectedWinningSide = null;
+
+function gameFinished(courtId) {
+  var court = courts.find(function(c){return c.id===courtId;});
+  var s0 = court.sides[0].map(function(id){return playerById(id);}).filter(Boolean);
+  var s1 = court.sides[1].map(function(id){return playerById(id);}).filter(Boolean);
+  if (!s0.length && !s1.length) return;
+  winnerCourtId = courtId; selectedWinningSide = null;
+  var html = '<div class="winner-pair-btn" id="winner-side0" onclick="selectWinningSide(0)">'
+    +'<div class="winner-pair-names">'+s0.map(function(p){return '<span class="'+pegClass(p)+'" style="padding:4px 10px;border-radius:20px;font-size:12px">'+p.name+'</span>';}).join('')+'</div>'
+    +'<span class="winner-trophy">🏆</span></div>'
+    +'<div class="winner-or">VS</div>'
+    +'<div class="winner-pair-btn" id="winner-side1" onclick="selectWinningSide(1)">'
+    +'<div class="winner-pair-names">'+s1.map(function(p){return '<span class="'+pegClass(p)+'" style="padding:4px 10px;border-radius:20px;font-size:12px">'+p.name+'</span>';}).join('')+'</div>'
+    +'<span class="winner-trophy">🏆</span></div>';
+  document.getElementById('winner-pairs').innerHTML = html;
+  document.getElementById('winner-modal').classList.add('open');
+}
+
+function selectWinningSide(side) {
+  selectedWinningSide = side;
+  document.getElementById('winner-side0').classList.toggle('selected', side===0);
+  document.getElementById('winner-side1').classList.toggle('selected', side===1);
+}
+
+function confirmWinner() {
+  if (selectedWinningSide===null) { toast('Select the winning pair', true); return; }
+  var court = courts.find(function(c){return c.id===winnerCourtId;});
+  var wIds = [].concat(court.sides[selectedWinningSide]);
+  var lIds = [].concat(court.sides[selectedWinningSide===0?1:0]);
+  wIds.concat(lIds).forEach(function(id){
+    var p=playerById(id); if(p){p.state='waiting';p.courtId=null;p.side=null;p.late=false;}
+  });
+  court.sides=[[],[]];
+  closeModal('winner-modal');
+  var names = wIds.map(function(id){var p=playerById(id);return p?p.name:'';}).filter(Boolean).join(' & ');
+  toast('🏆 '+names+' won!');
+  render();
+}
+
+// ── MANUAL PICK ──
+var manualPickSelected = [];
+
+function openManualPickModal() {
+  var waiting = waitingPlayers();
+  if (waiting.length<4) { toast('Need at least 4 in queue', true); return; }
+  var freeCourts = courts.filter(function(c){return !c.sides[0].length&&!c.sides[1].length;});
+  if (!freeCourts.length) { toast('No free courts', true); return; }
+  manualPickSelected = [];
+  document.getElementById('pick-selected-count').textContent = '0/4';
+  var top6 = waiting.slice(0,6);
+  var listHtml = '';
+  top6.forEach(function(p,i){
+    listHtml += '<div class="pick-player-row" id="pick-row-'+p.id+'" onclick="togglePickPlayer('+p.id+')">'
+      +'<div class="pick-sel-badge" id="pick-badge-'+p.id+'">–</div>'
+      +'<span class="'+pegClass(p)+'" style="padding:4px 10px;border-radius:20px;font-size:12px;pointer-events:none">'+p.name+'</span>'
+      +'<span style="font-size:10px;color:var(--muted);margin-left:auto">#'+(i+1)+'</span>'
+      +'</div>';
+  });
+  document.getElementById('pick-player-list').innerHTML = listHtml;
+  document.getElementById('pick-court-select').innerHTML = freeCourts.map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>';}).join('');
+  document.getElementById('manual-pick-modal').classList.add('open');
+}
+
+function togglePickPlayer(id) {
+  var idx = manualPickSelected.indexOf(id);
+  if (idx>=0) {
+    manualPickSelected.splice(idx,1);
+    document.getElementById('pick-row-'+id).classList.remove('selected');
+    document.getElementById('pick-badge-'+id).textContent = '–';
+  } else {
+    if (manualPickSelected.length>=4) { toast('Max 4 players', true); return; }
+    manualPickSelected.push(id);
+    document.getElementById('pick-row-'+id).classList.add('selected');
+  }
+  manualPickSelected.forEach(function(pid,i){
+    var b=document.getElementById('pick-badge-'+pid); if(b) b.textContent=i+1;
+  });
+  document.getElementById('pick-selected-count').textContent = manualPickSelected.length+'/4';
+}
+
+function confirmManualPick() {
+  if (manualPickSelected.length!==4) { toast('Select exactly 4 players', true); return; }
+  var courtId = parseInt(document.getElementById('pick-court-select').value);
+  var court = courts.find(function(c){return c.id===courtId;});
+  if (!court) return;
+  var chosen = manualPickSelected.map(function(id){return playerById(id);}).filter(Boolean);
+  assignToCourt(court, chosen);
+  closeModal('manual-pick-modal');
+  toast('Game started on '+court.name);
+  render();
+}
+
+// ── PEG CONTEXT MENU (queue actions only) ──
+var ctxOpen = false;
+function pegClick(e, id) {
+  e.preventDefault(); e.stopPropagation();
+  if (ctxOpen) { hideCtx(); return; }
+  showCtx(e, id);
+}
+function hideCtx() { document.getElementById('ctx-menu').style.display='none'; ctxOpen=false; }
+
+function showCtx(e, id) {
+  e.stopPropagation();
+  var p = playerById(id);
+  var menu = document.getElementById('ctx-menu');
+  var items = '';
+  if (p.state==='waiting') {
+    items += ctxBtn('markLate('+id+')', p.late ? '★ Remove late flag' : '★ Mark as late');
+    items += ctxBtn('sendToStorage('+id+')', '☕ Move to break');
+    items += ctxBtn('rosterRemove('+id+')', '⬅ Remove from session');
+  } else if (p.state==='storage') {
+    items += ctxBtn('rosterToQueue('+id+')', '↩ Return to queue');
+    items += ctxBtn('rosterRemove('+id+')', '⬅ Remove from session');
+  } else if (p.state==='playing') {
+    items += ctxBtn('removeFromCourt('+id+')', '⬅ Remove from court');
+  }
+  items += '<hr class="ctx-divider">';
+  items += ctxBtn('openDeleteModal('+id+')', '🗑 Delete player', true);
+  menu.innerHTML = items;
+  menu.style.display = 'block';
+  ctxOpen = true;
+  menu.style.left = Math.min(e.clientX, window.innerWidth-200)+'px';
+  menu.style.top  = Math.min(e.clientY, window.innerHeight-200)+'px';
+}
+
+function ctxBtn(fn, label, danger) {
+  var cls = 'ctx-item'+(danger?' danger':'');
+  return '<div class="'+cls+'" onmousedown="event.stopPropagation();'+fn+';hideCtx()">'+label+'</div>';
+}
+
+document.addEventListener('click', hideCtx);
+
+function markLate(id)        { var p=playerById(id);if(!p)return;p.late=!p.late;render(); }
+function sendToStorage(id)   { var p=playerById(id);if(!p)return;p.state='storage';p.courtId=null;p.side=null;toast(p.name+' on break');render(); }
+function removeFromCourt(id) {
+  var p=playerById(id);if(!p)return;
+  var court=courts.find(function(c){return c.id===p.courtId;});
+  if(court){court.sides[0]=court.sides[0].filter(function(i){return i!==id;});court.sides[1]=court.sides[1].filter(function(i){return i!==id;});}
+  p.state='waiting';p.courtId=null;p.side=null;
+  toast(p.name+' removed from court');render();
+}
+
+// ── TOAST ──
+function toast(msg, warn) {
+  var el = document.createElement('div');
+  el.className = 'toast'+(warn?' warn':'');
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(function(){el.remove();}, 3500);
+}
+
+// ── CLOCK ──
+function updateClock() {
+  var el = document.getElementById('live-clock');
+  if (el) el.textContent = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(updateClock, 1000);
+
+document.addEventListener('keydown', function(e) {
+  if (e.key==='Escape') ['add-modal','manual-pick-modal','winner-modal','delete-modal'].forEach(closeModal);
+});
+document.getElementById('player-name').addEventListener('keydown', function(e) {
+  if (e.key==='Enter') submitAddPlayer();
+});
+
+// Init is called after password gate is passed (or if already authenticated)
+if (sessionStorage.getItem('falcons_auth') === '1') { init(); }
+</script>
+</body>
+</html>
